@@ -1,0 +1,83 @@
+Title Practical Machine Learning
+Author  Mingchen
+
+========================================================
+## Load neccessary package and then read train and test files
+```{r readfies}
+  library(caret)
+  curdir<-getwd()
+  trainfile<-paste(curdir,"/pml-training.csv",sep="")
+  testfile<-paste(curdir,"/pml-testing.csv",sep="")
+  
+  training <-read.table(trainfile,header=T,sep=",")
+  testing <- read.table(testfile,header=T,sep=",")
+
+```
+## Find all the blank or NA variables and tease them
+* In the dataset there are many variables are blank or NA which will be obstacles in the modeling
+  
+```{r cleandata}
+
+  rs<-c()
+  rsc<-c()
+  for(name in names(training))
+  {
+    r<-c()
+    for(var in as.list(training[name]))
+    {
+      r<-append(r,as.numeric(nchar(as.character(var))))    
+    }
+    rs<-append(rs,sum(r==0))
+    rsc<-append(rsc,sum(is.na(training[name])))
+  }
+  inds<-c()
+  for(i in 1:length(rs))
+  {
+    if(rs[i]>19622*0.7)
+    {
+      inds<-append(inds,i)
+    }
+  }
+  indsc<-c()
+  for(i in 1:length(rsc))
+  {
+    if(rsc[i]>19622*0.7)
+    {
+     indsc<-append(indsc,i) 
+    }
+  }
+  lost_ind<-union(inds,indsc)# the most lost record column index
+  training<-subset(training,select=-lost_ind)
+  testing<-subset(testing,select=-lost_ind)
+   table(rs,rsc)
+```
+*We can get almost 100 variabls that most of its values are blank or NA 
+##Model Selection
+*We here partition the training set into traindata(70%) and cross_valid(30%)
+*Use the cross validation to evaluate the general error in the testing set
+```{r crossvalidation}
+  c_v<-createDataPartition(training$classe,p=0.3,list=F)
+  traindata<-training[-c_v,]
+  cross_valid<-training[c_v,]
+  
+```
+##Result
+*In this project, we use glmboost, svmRadial and ensemble models to train the data
+*We use the formula classe~. to trian the model
+*svmLinear
+* Predict  cross_validata
+* A    B    C    D    E 
+*1752 1078 1084  906 1069 
+* Predict true labels
+* A    B    C    D    E 
+*1674 1140 1027  965 1083 
+*-acc=0.916794
+*gbm
+*Resampling results
+
+*  Accuracy  Kappa  Accuracy SD  Kappa SD
+*  0.904     0.879  0.00296      0.00368 
+
+
+
+
